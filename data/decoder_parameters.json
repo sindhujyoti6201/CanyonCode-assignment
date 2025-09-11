@@ -1,0 +1,47 @@
+[
+  {
+    "id": "dec_VP9",
+    "buffer_size": 1024,
+    "hardware_acceleration": true,
+    "thread_count": 4,
+    "output_format": "YUV420",
+    "deinterlace": false,
+    "color_space": "BT.709"
+  },
+  {
+    "id": "dec_MPEG2",
+    "buffer_size": 512,
+    "hardware_acceleration": true,
+    "thread_count": 2,
+    "output_format": "YUV420",
+    "deinterlace": false,
+    "color_space": "BT.709"
+  },
+  {
+    "id": "dec_H265",
+    "buffer_size": 1024,
+    "hardware_acceleration": true,
+    "thread_count": 4,
+    "output_format": "YUV420",
+    "deinterlace": false,
+    "color_space": "BT.709"
+  },
+  {
+    "id": "dec_H264",
+    "buffer_size": 512,
+    "hardware_acceleration": true,
+    "thread_count": 2,
+    "output_format": "YUV420",
+    "deinterlace": false,
+    "color_space": "BT.709"
+  },
+  {
+    "id": "dec_AV1",
+    "buffer_size": 512,
+    "hardware_acceleration": true,
+    "thread_count": 2,
+    "output_format": "YUV420",
+    "deinterlace": false,
+    "color_space": "BT.709"
+  }
+]
