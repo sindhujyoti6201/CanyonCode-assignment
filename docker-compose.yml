@@ -11,18 +11,6 @@ services:
       - ./data:/app/data
     restart: unless-stopped
 
-  # React Frontend service
-  frontend:
-    build:
-      context: ./frontend
-    ports:
-      - "3000:80"
-    environment:
-      - REACT_APP_API_URL=http://localhost:8001
-    depends_on:
-      - api
-    restart: unless-stopped
-
 volumes:
   data:
     driver: local

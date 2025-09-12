@@ -1,0 +1,69 @@
+
+
+services:
+  # PostgreSQL database
+  postgres:
+    image: postgres:15-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=camera_feeds
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Qdrant vector database
+  qdrant:
+    image: qdrant/qdrant:v1.7.0
+    ports:
+      - "6335:6333"
+      - "6336:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    environment:
+      - QDRANT__SERVICE__HTTP_PORT=6333
+      - QDRANT__SERVICE__GRPC_PORT=6334
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/collections"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # MCP RAG Query Server
+  mcp-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"  # HTTP API port
+    env_file:
+      - .env
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - QDRANT_URL=http://qdrant:6333
+      - TRANSPORT_MODE=${TRANSPORT_MODE:-hybrid}  # stdio, http, or hybrid
+    volumes:
+      - ./qdrant_db:/app/qdrant_db
+      - ../../data:/app/data
+    depends_on:
+      - postgres
+      - qdrant
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+    command: python server.py
+
+volumes:
+  postgres_data:
+    driver: local
+  qdrant_data:
+    driver: local

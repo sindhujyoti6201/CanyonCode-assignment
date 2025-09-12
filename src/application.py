@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from controllers.health import router as health_router
-from controllers.camera_query_controller import router as camera_query_router
+from controllers.chatbot_controller import router as chatbot_router
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -27,8 +27,8 @@ app.add_middleware(
 
 # Include routers
 app.include_router(health_router)
-app.include_router(camera_query_router)
+app.include_router(chatbot_router, prefix="/api/v1", tags=["chatbot"])
 
 if __name__ == "__main__":
     print("Starting API server on http://localhost:8001")
-    uvicorn.run(app, host="0.0.0.0", port=8001, reload=True)
+    uvicorn.run(app, host="0.0.0.0", port=8001, reload=False)
