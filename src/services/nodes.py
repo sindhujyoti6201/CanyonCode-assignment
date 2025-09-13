@@ -141,6 +141,7 @@ def analyze_query_intent(query: str, llm: ChatOpenAI) -> dict:
     - "What is the criteria for video quality?" -> metadata_query
     - "How can we identify video quality?" -> metadata_query
     - "What determines feed quality?" -> metadata_query
+    - "What are the camera IDs that are capturing the pacific area with the best clarity?" -> data_query
     - "How many cameras are in Pacific region?" -> data_query
     - "What cameras are in Pacific region?" -> data_query
     - "Show me all 4K cameras" -> data_query
@@ -153,22 +154,34 @@ def analyze_query_intent(query: str, llm: ChatOpenAI) -> dict:
     
     response = llm.invoke([HumanMessage(content=intent_prompt)])
     
+    print(f"🔍 LLM Intent Response: '{response.content}'")
+    
     try:
         import json
-        result = json.loads(response.content)
-        return result
-    except:
-        # Fallback to simple keyword matching
-        query_lower = query.lower().strip()
+        import re
         
-        # Only classify as greeting if it's JUST a simple greeting word
-        if query_lower in ["hi", "hello", "hey"]:
-            return {"intent": "general_greeting", "confidence": 0.8, "reasoning": "Simple greeting only"}
-        elif any(word in query_lower for word in ["how many", "which", "what cameras", "show me", "list", "count"]):
-            return {"intent": "data_query", "confidence": 0.8, "reasoning": "Asks for specific data/counts"}
-        else:
-            # Everything else goes to metadata_query
-            return {"intent": "metadata_query", "confidence": 0.8, "reasoning": "Not a simple greeting or data query, defaulting to metadata"}
+        # Extract JSON from markdown code blocks if present
+        content = response.content.strip()
+        
+        # Remove markdown code block formatting
+        if content.startswith('```json'):
+            content = content[7:]  # Remove ```json
+        elif content.startswith('```'):
+            content = content[3:]   # Remove ```
+        
+        if content.endswith('```'):
+            content = content[:-3]  # Remove trailing ```
+        
+        content = content.strip()
+        
+        result = json.loads(content)
+        print(f"✅ Parsed intent: {result}")
+        return result
+    except Exception as e:
+        print(f"❌ Error in LLM intent analysis: {e}")
+        print(f"Raw response content: '{response.content}'")
+        # If LLM fails, default to metadata_query to be safe
+        return {"intent": "metadata_query", "confidence": 0.5, "reasoning": f"LLM analysis failed: {str(e)}"}
 
 
 def call_rag_tool(query: str, llm: ChatOpenAI) -> str:
@@ -214,15 +227,15 @@ def formulate_sql_query(query: str, rag_context: str, llm: ChatOpenAI) -> str:
     Just the pure SQL statement.
     
     Example table structure from the data:
-    - FEED_ID: Camera identifier
-    - THEATER: Region (PAC, EUR, CONUS, ME, AFR, ARC)
-    - FRRATE: Frame rate
-    - RES_W, RES_H: Resolution width and height
-    - CODEC: Video codec (H264, H265, VP9, MPEG2, AV1)
-    - ENCR: Encryption status
-    - LAT_MS: Latency in milliseconds
-    - MODL_TAG: Model tag
-    - CIV_OK: Civilian status
+    - feed_id: Camera identifier
+    - theater: Region (PAC, EUR, CONUS, ME, AFR, ARC)
+    - frrate: Frame rate
+    - res_w, res_h: Resolution width and height
+    - codec: Video codec (H264, H265, VP9, MPEG2, AV1)
+    - encr: Encryption status
+    - lat_ms: Latency in milliseconds
+    - modl_tag: Model tag
+    - civ_ok: Civilian status
     
     For counting questions (like "how many cameras"), use COUNT(*) with appropriate WHERE clauses.
     For listing questions, use SELECT * with appropriate WHERE clauses.

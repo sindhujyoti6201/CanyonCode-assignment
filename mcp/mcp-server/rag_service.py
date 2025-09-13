@@ -21,6 +21,7 @@ from langchain.embeddings import OpenAIEmbeddings
 from langchain.chains import RetrievalQA
 from langchain.chat_models import ChatOpenAI
 from langchain.schema import Document
+from langchain.prompts import PromptTemplate
 
 # Local imports
 from constants import (
@@ -171,12 +172,31 @@ def get_rag_instance() -> RetrievalQA:
             docs = chunk_texts(texts)
             vectorstore = build_vectorstore(docs)
         
-        # Create RAG pipeline
+        # Create RAG pipeline with custom prompt
         retriever = vectorstore.as_retriever(search_kwargs={"k": DEFAULT_TOP_K})
         llm = ChatOpenAI(model=OPENAI_CHAT_MODEL, temperature=0)
+        
+        # Custom prompt template for better responses
+        prompt_template = """Use the following pieces of context to answer the question at the end. 
+        Analyze the provided context and infer relevant information from the available data fields and their descriptions.
+        If asked about quality criteria, quality assessment, or how to determine quality, examine the context 
+        to identify which fields might indicate quality and how they could be used for assessment.
+        
+        Context:
+        {context}
+
+        Question: {question}
+        
+        Answer: Based on the available data fields and their descriptions, provide a comprehensive answer."""
+        
+        PROMPT = PromptTemplate(
+            template=prompt_template, input_variables=["context", "question"]
+        )
+        
         _rag_instance = RetrievalQA.from_chain_type(
             llm=llm, retriever=retriever, 
-            chain_type="stuff", return_source_documents=True
+            chain_type="stuff", return_source_documents=True,
+            chain_type_kwargs={"prompt": PROMPT}
         )
         print("RAG system ready!")
     

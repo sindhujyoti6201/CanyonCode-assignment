@@ -115,25 +115,41 @@ def create_tables():
         print(f"Error creating tables: {e}")
         return False
 
-def load_csv_to_database(csv_file_path: str = "../../db-data/Table_feeds_v2.csv"):
+def load_csv_to_database(csv_file_path: str = "/app/db-data/Table_feeds_v2.csv"):
     """Load CSV data into PostgreSQL database (preload function)"""
     try:
+        print(f"Attempting to load CSV from: {csv_file_path}")
+        
+        # Check if file exists
+        import os
+        if not os.path.exists(csv_file_path):
+            print(f"ERROR: CSV file not found at {csv_file_path}")
+            return False
+        
         # Read CSV file
         df = pd.read_csv(csv_file_path)
         print(f"Loaded CSV with {len(df)} rows and {len(df.columns)} columns")
+        print(f"CSV columns: {list(df.columns)}")
         
         # Get database connection
+        print("Getting database connection...")
         conn = get_db_connection()
         if conn is None:
+            print("ERROR: Could not connect to database")
             return False
         
         cursor = conn.cursor()
+        print("Database connection established")
         
         # Clear existing data
+        print("Clearing existing data from camera_feeds table...")
         cursor.execute("DELETE FROM camera_feeds;")
         
         # Insert data
-        for _, row in df.iterrows():
+        print(f"Inserting {len(df)} records into database...")
+        for i, (_, row) in enumerate(df.iterrows()):
+            if i % 10 == 0:  # Print progress every 10 records
+                print(f"Inserting record {i+1}/{len(df)}")
             insert_sql = """
             INSERT INTO camera_feeds 
             (feed_id, theater, frrate, res_w, res_h, codec, encr, lat_ms, modl_tag, civ_ok)

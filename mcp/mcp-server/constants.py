@@ -54,7 +54,7 @@ CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", "100"))
 CHUNK_SEPARATORS = ["\n\n", "\n", " ", ""]
 
 # Retrieval Configuration (from environment variables)
-DEFAULT_TOP_K = int(os.getenv("DEFAULT_TOP_K", "5"))
+DEFAULT_TOP_K = int(os.getenv("DEFAULT_TOP_K", "10"))
 MAX_TOP_K = 20
 
 # =============================================================================
