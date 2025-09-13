@@ -4,22 +4,27 @@ Chatbot Controller - Handles chatbot conversation endpoint using Graph Service
 """
 
 from fastapi import APIRouter, HTTPException
-from models.query_models import QueryRequest, QueryResponse
-from services.graph_service import graph
+from src.models.query_models import QueryRequest, QueryResponse
+from src.services.graph_service import graph
+from langchain_core.messages import HumanMessage
 
 router = APIRouter()
 
 @router.post("/chat", response_model=QueryResponse)
 async def send_message(request: QueryRequest):
-    """Send a message to the chatbot and get response using graph workflow"""
+    """Send a message to the chatbot and get response using graph workflow with built-in memory"""
     try:
+        # Get thread_id from request, default to "default"
+        thread_id = request.thread_id or "default"
+        
         # Create input state for the graph
         input_state = {
-            "messages": [{"role": "user", "content": request.query}]
+            "messages": [HumanMessage(content=request.query)]
         }
         
-        # Run the graph workflow
-        result = graph.invoke(input_state)
+        # Run the graph workflow with memory (thread_id passed via config)
+        config = {"configurable": {"thread_id": thread_id}}
+        result = graph.invoke(input_state, config=config)
         
         # Extract the response from the last AI message
         response_text = "No response generated"
@@ -30,7 +35,8 @@ async def send_message(request: QueryRequest):
                     break
         
         return QueryResponse(
-            response=response_text
+            response=response_text,
+            thread_id=thread_id
         )
         
     except Exception as e:

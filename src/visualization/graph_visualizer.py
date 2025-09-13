@@ -6,7 +6,15 @@ Handles graph structure visualization
 def save_graph_visualization(graph, filename="src/visualization/graph_visualization.png"):
     """Save graph visualization as PNG file"""
     try:
-        png_data = graph.get_graph().draw_mermaid_png()
+        # Handle GraphWithMemory wrapper
+        if hasattr(graph, 'graph'):
+            # It's our GraphWithMemory wrapper, get the underlying graph
+            actual_graph = graph.graph
+        else:
+            # It's the raw graph
+            actual_graph = graph
+        
+        png_data = actual_graph.get_graph().draw_mermaid_png()
         with open(filename, "wb") as f:
             f.write(png_data)
         print(f"✅ Graph visualization saved as '{filename}'")
