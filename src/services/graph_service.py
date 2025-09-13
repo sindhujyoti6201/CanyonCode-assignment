@@ -9,7 +9,7 @@ from typing import Any
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from langgraph.graph import StateGraph, START, END
-from langgraph.checkpoint.sqlite import SqliteSaver
+# SqliteSaver not needed for basic graph visualization
 from models.state_models import AgentState
 
 # Import node and edge functions
@@ -59,21 +59,6 @@ def create_graph() -> Any:
     graph = graph_builder.compile()
     print("Graph compiled successfully")
     return graph
-
-
-def create_graph_with_checkpointer(db_path: str = "state_db/chatbot.db") -> Any:
-    """Create graph with SQLite checkpointer for persistence"""
-    # Ensure database directory exists
-    os.makedirs(os.path.dirname(db_path), exist_ok=True)
-    
-    # Initialize SQLite connection and checkpointer
-    import sqlite3
-    conn = sqlite3.connect(db_path, check_same_thread=False)
-    memory = SqliteSaver(conn)
-    
-    # Build and compile with checkpointer
-    graph_builder = build_graph()
-    return graph_builder.compile(checkpointer=memory)
 
 
 # Create default graph instance

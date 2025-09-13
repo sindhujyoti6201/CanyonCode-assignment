@@ -122,18 +122,25 @@ def analyze_query_intent(query: str, llm: ChatOpenAI) -> dict:
     Query: "{query}"
     
     Classify the intent as one of:
-    1. "general_greeting" - Simple greetings like "hi", "hello", "how are you"
-    2. "metadata_query" - Questions about schemas, parameters, configurations, definitions, how things work, what something means
-    3. "data_query" - Questions asking for specific data, lists, counts, numbers, or analysis of actual camera feed data
-    4. "unclear" - Cannot determine intent
+    1. "general_greeting" - ONLY simple greetings like "hi", "hello", "hey" (nothing else)
+    2. "data_query" - Questions asking for specific data, lists, counts, numbers, or analysis of actual camera feed data
+    3. "metadata_query" - ALL OTHER queries including questions about schemas, parameters, configurations, definitions, how things work, what something means, criteria, quality standards, technical concepts, explanations, etc.
     
-    IMPORTANT: Questions with "how many", "which", "what cameras", "show me", "list", "count" should be classified as data_query, NOT metadata_query.
+    IMPORTANT RULES:
+    - ONLY classify as "general_greeting" if the query is JUST a simple greeting (hi, hello, hey)
+    - Questions with "how many", "which", "what cameras", "show me", "list", "count" should be classified as data_query
+    - EVERYTHING ELSE that is not a simple greeting and not asking for specific data should be classified as metadata_query
     
     Examples:
-    - "Hi there" -> general_greeting
+    - "Hi" -> general_greeting
+    - "Hello" -> general_greeting
+    - "Hey" -> general_greeting
     - "What is the encoder schema?" -> metadata_query  
     - "How does H265 encoding work?" -> metadata_query
     - "What does the CODEC field mean?" -> metadata_query
+    - "What is the criteria for video quality?" -> metadata_query
+    - "How can we identify video quality?" -> metadata_query
+    - "What determines feed quality?" -> metadata_query
     - "How many cameras are in Pacific region?" -> data_query
     - "What cameras are in Pacific region?" -> data_query
     - "Show me all 4K cameras" -> data_query
@@ -152,15 +159,16 @@ def analyze_query_intent(query: str, llm: ChatOpenAI) -> dict:
         return result
     except:
         # Fallback to simple keyword matching
-        query_lower = query.lower()
-        if any(word in query_lower for word in ["hi", "hello", "hey", "good morning", "good afternoon"]):
-            return {"intent": "general_greeting", "confidence": 0.8, "reasoning": "Contains greeting words"}
+        query_lower = query.lower().strip()
+        
+        # Only classify as greeting if it's JUST a simple greeting word
+        if query_lower in ["hi", "hello", "hey"]:
+            return {"intent": "general_greeting", "confidence": 0.8, "reasoning": "Simple greeting only"}
         elif any(word in query_lower for word in ["how many", "which", "what cameras", "show me", "list", "count"]):
             return {"intent": "data_query", "confidence": 0.8, "reasoning": "Asks for specific data/counts"}
-        elif any(word in query_lower for word in ["schema", "parameter", "config", "definition", "how does", "what is", "explain", "what does"]):
-            return {"intent": "metadata_query", "confidence": 0.8, "reasoning": "Asks about definitions/schemas"}
         else:
-            return {"intent": "data_query", "confidence": 0.7, "reasoning": "Likely asking for specific data"}
+            # Everything else goes to metadata_query
+            return {"intent": "metadata_query", "confidence": 0.8, "reasoning": "Not a simple greeting or data query, defaulting to metadata"}
 
 
 def call_rag_tool(query: str, llm: ChatOpenAI) -> str:
